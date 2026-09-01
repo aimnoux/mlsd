@@ -18,6 +18,7 @@
   --primary: #8b5cf6;
   --primary-light: rgba(139, 92, 246, 0.1);
   --accent: #ec4899;
+  --accent-light: rgba(236, 72, 153, 0.1);
   --grad-start: #818cf8;
   --grad-mid: #a78bfa;
   --grad-end: #f472b6;
@@ -29,10 +30,12 @@
   --classic-ml-text: #4f46e5;
   --recsys-bg: rgba(236, 72, 153, 0.12);
   --recsys-text: #be185d;
-  --nlp-bg: rgba(34, 197, 94, 0.13);
-  --nlp-text: #15803d;
   --cv-bg: rgba(251, 146, 60, 0.13);
   --cv-text: #c2410c;
+  --llm-engineer-bg: rgba(34, 197, 94, 0.13);
+  --llm-engineer-text: #15803d;
+  --ai-engineer-bg: rgba(6, 182, 212, 0.13);
+  --ai-engineer-text: #0e7490;
 
   /* domain colors */
   --retail-bg: rgba(52, 211, 153, 0.13);
@@ -51,6 +54,14 @@
   --media-text: #9d174d;
   --logistics-bg: rgba(45, 212, 191, 0.13);
   --logistics-text: #0f766e;
+  --gambling-bg: rgba(239, 68, 68, 0.12);
+  --gambling-text: #b91c1c;
+  --legal-bg: rgba(100, 116, 139, 0.14);
+  --legal-text: #475569;
+  --enterprise-bg: rgba(132, 204, 22, 0.14);
+  --enterprise-text: #4d7c0f;
+  --social-bg: rgba(168, 85, 247, 0.13);
+  --social-text: #7e22ce;
 }
 
 [data-theme='dark'] {
@@ -65,6 +76,7 @@
   --primary: #a78bfa;
   --primary-light: rgba(167, 139, 250, 0.13);
   --accent: #f472b6;
+  --accent-light: rgba(244, 114, 182, 0.13);
   --grad-start: #a5b4fc;
   --grad-mid: #c4b5fd;
   --grad-end: #f9a8d4;
@@ -75,10 +87,12 @@
   --classic-ml-text: #a5b4fc;
   --recsys-bg: rgba(249, 168, 212, 0.14);
   --recsys-text: #f9a8d4;
-  --nlp-bg: rgba(134, 239, 172, 0.13);
-  --nlp-text: #86efac;
   --cv-bg: rgba(253, 186, 116, 0.13);
   --cv-text: #fdba74;
+  --llm-engineer-bg: rgba(134, 239, 172, 0.13);
+  --llm-engineer-text: #86efac;
+  --ai-engineer-bg: rgba(103, 232, 249, 0.13);
+  --ai-engineer-text: #67e8f9;
 
   --retail-bg: rgba(110, 231, 183, 0.12);
   --retail-text: #6ee7b7;
@@ -96,6 +110,14 @@
   --media-text: #f9a8d4;
   --logistics-bg: rgba(94, 234, 212, 0.12);
   --logistics-text: #5eead4;
+  --gambling-bg: rgba(252, 165, 165, 0.13);
+  --gambling-text: #fca5a5;
+  --legal-bg: rgba(203, 213, 225, 0.13);
+  --legal-text: #cbd5e1;
+  --enterprise-bg: rgba(190, 242, 100, 0.13);
+  --enterprise-text: #bef264;
+  --social-bg: rgba(232, 121, 249, 0.13);
+  --social-text: #e879f9;
 }
 
 html {
@@ -241,37 +263,6 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   max-width: 520px;
   margin: 0 auto 2rem;
   line-height: 1.6;
-}
-
-.author-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1.5rem;
-  border-radius: 9999px;
-  background: linear-gradient(135deg, var(--grad-start) 0%, var(--grad-mid) 50%, var(--grad-end) 100%);
-  color: #fff;
-  font-size: 0.9375rem;
-  font-weight: 600;
-  box-shadow: 0 4px 20px rgba(167, 139, 250, 0.4);
-  transition: all 0.25s;
-  text-decoration: none;
-}
-
-.author-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 28px rgba(167, 139, 250, 0.5);
-}
-
-.author-btn svg {
-  width: 18px;
-  height: 18px;
-  flex-shrink: 0;
-  transition: transform 0.2s;
-}
-
-.author-btn:hover svg {
-  transform: rotate(12deg);
 }
 
 /* ── Filters ─────────────────────────────────────────────── */
@@ -507,10 +498,11 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 
 .case-card:hover .badge { transform: scale(1.05); }
 
-.badge-classic_ml { background: var(--classic-ml-bg); color: var(--classic-ml-text); }
-.badge-recsys     { background: var(--recsys-bg);     color: var(--recsys-text); }
-.badge-nlp        { background: var(--nlp-bg);        color: var(--nlp-text); }
-.badge-cv         { background: var(--cv-bg);         color: var(--cv-text); }
+.badge-classic_ml    { background: var(--classic-ml-bg);   color: var(--classic-ml-text); }
+.badge-recsys        { background: var(--recsys-bg);       color: var(--recsys-text); }
+.badge-cv            { background: var(--cv-bg);           color: var(--cv-text); }
+.badge-llm_engineer  { background: var(--llm-engineer-bg); color: var(--llm-engineer-text); }
+.badge-ai_engineer   { background: var(--ai-engineer-bg);  color: var(--ai-engineer-text); }
 
 .badge-retail     { background: var(--retail-bg);     color: var(--retail-text); }
 .badge-fintech    { background: var(--fintech-bg);    color: var(--fintech-text); }
@@ -520,6 +512,10 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .badge-realestate { background: var(--realestate-bg); color: var(--realestate-text); }
 .badge-media      { background: var(--media-bg);      color: var(--media-text); }
 .badge-logistics  { background: var(--logistics-bg);  color: var(--logistics-text); }
+.badge-gambling   { background: var(--gambling-bg);   color: var(--gambling-text); }
+.badge-legal      { background: var(--legal-bg);      color: var(--legal-text); }
+.badge-enterprise { background: var(--enterprise-bg); color: var(--enterprise-text); }
+.badge-social     { background: var(--social-bg);     color: var(--social-text); }
 
 /* ── Empty state ─────────────────────────────────────────── */
 
@@ -646,6 +642,10 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   letter-spacing: 0.07em;
 }
 
+[hidden] {
+  display: none !important;
+}
+
 .modal-divider {
   height: 1px;
   background: var(--border);
@@ -737,6 +737,179 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   background: var(--primary-light);
 }
 
+/* ── Authors ─────────────────────────────────────────────── */
+
+/* Сетка авторов: первая карточка занимает обе колонки, остальные
+   идут по двое в ряд. */
+.authors {
+  --author-col: 15.5rem;
+  --author-gap: 0.75rem;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.875rem;
+  margin-top: 1.75rem;
+}
+
+.authors-title {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.authors-list {
+  display: grid;
+  grid-template-columns: repeat(2, var(--author-col));
+  justify-content: center;
+  align-items: stretch;
+  gap: var(--author-gap);
+}
+
+.author-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  width: var(--author-col);
+  min-height: 8.25rem;
+  padding: 1rem 1.125rem;
+  border: 1px solid var(--border);
+  border-radius: 0.875rem;
+  background: var(--bg-card);
+  box-shadow: var(--shadow-card);
+  transition: border-color 0.25s, box-shadow 0.25s;
+}
+
+.author-card:hover {
+  border-color: var(--border-hover);
+}
+
+.author-card-lead {
+  grid-column: 1 / -1;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1rem;
+  width: 100%;
+  min-height: 0;
+  padding: 0.875rem 1.25rem;
+  border: 1.5px solid transparent;
+  background:
+    linear-gradient(var(--bg-card), var(--bg-card)) padding-box,
+    linear-gradient(135deg, var(--grad-start) 0%, var(--grad-mid) 50%, var(--grad-end) 100%) border-box;
+  box-shadow: 0 4px 20px rgba(167, 139, 250, 0.22);
+}
+
+.author-card-lead:hover {
+  border-color: transparent;
+  box-shadow: 0 8px 28px rgba(167, 139, 250, 0.32);
+}
+
+.author-name {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--text);
+  text-align: center;
+}
+
+.author-card-lead .author-links {
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: center;
+  width: auto;
+}
+
+.author-card-lead .author-btn {
+  width: auto;
+  padding: 0.35rem 0.875rem;
+  font-size: 0.8125rem;
+}
+
+.author-card-lead .author-btn svg {
+  width: 13px;
+  height: 13px;
+}
+
+.author-card-lead .author-name {
+  font-size: 1.0625rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--grad-start) 0%, var(--grad-mid) 50%, var(--grad-end) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Каналы — вертикальный список во всю ширину карточки: карточки
+   остаются одинаковыми независимо от числа ссылок у автора. */
+.author-links {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  width: 100%;
+}
+
+.author-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  width: 100%;
+  padding: 0.4rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 9999px;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.author-btn-handle {
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+.author-btn svg {
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+  transition: transform 0.2s;
+}
+
+.author-btn:hover {
+  transform: translateY(-1px);
+}
+
+.author-btn:hover .author-btn-handle {
+  color: inherit;
+  opacity: 0.75;
+}
+
+.author-btn-telegram:hover {
+  color: var(--primary);
+  border-color: var(--primary);
+  background: var(--primary-light);
+}
+
+.author-btn-telegram:hover svg {
+  transform: rotate(12deg);
+}
+
+.author-btn-youtube:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: var(--accent-light);
+}
+
+.author-btn-youtube:hover svg {
+  transform: scale(1.1);
+}
+
 /* ── Animations ──────────────────────────────────────────── */
 
 @keyframes fade-in-up {
@@ -757,4 +930,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   .modal-body { padding: 1rem 1.25rem 1.25rem; }
   .modal-title { font-size: 1.2rem; }
   .filter-label { display: none; }
+  .authors { --author-col: 100%; }
+  .authors-list { grid-template-columns: 1fr; width: 100%; }
+  .author-card { min-height: 0; }
 }

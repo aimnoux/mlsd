@@ -1,4 +1,4 @@
-export type Category = 'classic_ml' | 'recsys' | 'nlp' | 'cv';
+export type Category = 'classic_ml' | 'recsys' | 'cv' | 'llm_engineer' | 'ai_engineer';
 export type Domain =
   | 'retail'
   | 'fintech'
@@ -7,12 +7,16 @@ export type Domain =
   | 'telecom'
   | 'realestate'
   | 'media'
-  | 'logistics';
+  | 'logistics'
+  | 'gambling'
+  | 'legal'
+  | 'enterprise'
+  | 'social';
 
 export interface Case {
   id: string;
   title: string;
-  category: Category;
+  categories: Category[];
   domain: Domain;
   problemStatement: string;
   clarifyingQuestions: string[];

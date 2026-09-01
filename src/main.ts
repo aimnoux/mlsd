@@ -5,10 +5,11 @@ import type { Category, Domain, Filter } from './types';
 // ── Label maps ────────────────────────────────────────────
 
 const CATEGORY_LABEL: Record<string, string> = {
-  classic_ml: 'ClassicML',
+  classic_ml: 'Classic ML',
   recsys: 'RecSys',
-  nlp: 'NLP',
   cv: 'CV',
+  llm_engineer: 'LLM-engineer',
+  ai_engineer: 'AI-engineer',
 };
 
 const DOMAIN_LABEL: Record<string, string> = {
@@ -20,12 +21,19 @@ const DOMAIN_LABEL: Record<string, string> = {
   realestate: 'RealEstate',
   media: 'Media',
   logistics: 'Logistics',
+  gambling: 'Gambling',
+  legal: 'Legal',
+  enterprise: 'Enterprise',
+  social: 'Social',
 };
 
-const CATEGORIES: Array<Filter<Category>> = ['all', 'classic_ml', 'recsys', 'nlp', 'cv'];
+const CATEGORIES: Array<Filter<Category>> = [
+  'all', 'classic_ml', 'recsys', 'cv', 'llm_engineer', 'ai_engineer',
+];
 const DOMAINS: Array<Filter<Domain>> = [
   'all', 'retail', 'fintech', 'adtech', 'travel',
   'telecom', 'realestate', 'media', 'logistics',
+  'gambling', 'legal', 'enterprise', 'social',
 ];
 
 // ── SVG icons ─────────────────────────────────────────────
@@ -37,7 +45,65 @@ const ICON_ARROW_UPRIGHT = `<svg viewBox="0 0 24 24" fill="none" stroke="current
 const ICON_SEND = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>`;
 const ICON_FILE = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>`;
 const ICON_LIST = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>`;
+const ICON_YOUTUBE = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22.5 6.9a2.8 2.8 0 0 0-2-2C18.8 4.5 12 4.5 12 4.5s-6.8 0-8.5.4a2.8 2.8 0 0 0-2 2C1.1 8.6 1.1 12 1.1 12s0 3.4.4 5.1a2.8 2.8 0 0 0 2 2c1.7.4 8.5.4 8.5.4s6.8 0 8.5-.4a2.8 2.8 0 0 0 2-2c.4-1.7.4-5.1.4-5.1s0-3.4-.4-5.1z"/><path d="M9.9 15.3l5.6-3.3-5.6-3.3z"/></svg>`;
 const ICON_MSG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`;
+
+// ── Authors ───────────────────────────────────────────────
+
+type LinkKind = 'telegram' | 'youtube';
+
+interface Author {
+  name: string;
+  links: Array<{ kind: LinkKind; label: string; handle: string; href: string }>;
+}
+
+const LINK_ICON: Record<LinkKind, string> = {
+  telegram: ICON_SEND,
+  youtube: ICON_YOUTUBE,
+};
+
+const LEAD_AUTHOR: Author = {
+  name: 'Максим Огородник',
+  links: [
+    {
+      kind: 'telegram',
+      label: 'Telegram',
+      handle: '@maxouniai',
+      href: 'https://t.me/maxouniai',
+    },
+  ],
+};
+
+const COAUTHORS: Author[] = [
+  {
+    name: 'Григорий Чернышов',
+    links: [
+      {
+        kind: 'telegram',
+        label: 'Telegram',
+        handle: '@doommot_channel',
+        href: 'https://t.me/doommot_channel',
+      },
+    ],
+  },
+  {
+    name: 'Рома Филонов',
+    links: [
+      {
+        kind: 'telegram',
+        label: 'Telegram',
+        handle: '@Ai_bolno_ml',
+        href: 'https://t.me/Ai_bolno_ml',
+      },
+      {
+        kind: 'youtube',
+        label: 'YouTube',
+        handle: '@AI_bolno_ml',
+        href: 'https://www.youtube.com/@AI_bolno_ml',
+      },
+    ],
+  },
+];
 
 // ── Escape HTML ───────────────────────────────────────────
 
@@ -74,8 +140,40 @@ function toggleTheme() {
 function catBadge(cat: string) {
   return `<span class="badge badge-${cat}">${CATEGORY_LABEL[cat] ?? cat}</span>`;
 }
+function catBadges(cats: string[]) {
+  return cats.map(catBadge).join('');
+}
 function domBadge(dom: string) {
   return `<span class="badge badge-${dom}">${DOMAIN_LABEL[dom] ?? dom}</span>`;
+}
+
+// «1 вопрос», «2 вопроса», «5 вопросов»
+function pluralQuestions(n: number) {
+  const mod10 = n % 10;
+  const mod100 = n % 100;
+  if (mod10 === 1 && mod100 !== 11) return `${n} вопрос`;
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return `${n} вопроса`;
+  return `${n} вопросов`;
+}
+
+// ── Author card ───────────────────────────────────────────
+
+function authorCard(a: Author, lead = false) {
+  const links = a.links.map((l) => `
+    <a
+      class="author-btn author-btn-${l.kind}"
+      href="${l.href}"
+      target="_blank"
+      rel="noopener noreferrer"
+    >${LINK_ICON[l.kind]}<span class="author-btn-label">${esc(l.label)}</span><span
+      class="author-btn-handle"
+    >${esc(l.handle)}</span></a>`).join('');
+
+  return `
+    <div class="author-card${lead ? ' author-card-lead' : ''}">
+      <span class="author-name">${esc(a.name)}</span>
+      <div class="author-links">${links}</div>
+    </div>`;
 }
 
 // ── Filter pill ───────────────────────────────────────────
@@ -95,12 +193,14 @@ function renderList() {
   const catCounts: Record<string, number> = {};
   const domCounts: Record<string, number> = {};
   cases.forEach((c) => {
-    catCounts[c.category] = (catCounts[c.category] ?? 0) + 1;
+    c.categories.forEach((cat) => {
+      catCounts[cat] = (catCounts[cat] ?? 0) + 1;
+    });
     domCounts[c.domain] = (domCounts[c.domain] ?? 0) + 1;
   });
 
   const filtered = cases.filter((c) => {
-    if (state.category !== 'all' && c.category !== state.category) return false;
+    if (state.category !== 'all' && !c.categories.includes(state.category as Category)) return false;
     if (state.domain !== 'all' && c.domain !== state.domain) return false;
     if (state.q) {
       const q = state.q.toLowerCase();
@@ -134,15 +234,17 @@ function renderList() {
         >
           <div class="card-top">
             <div class="card-badges">
-              ${catBadge(c.category)}
+              ${catBadges(c.categories)}
               ${domBadge(c.domain)}
             </div>
             <span class="card-arrow">${ICON_ARROW_UPRIGHT}</span>
           </div>
           <h3 class="card-title">${esc(c.title)}</h3>
-          <div class="card-footer">
-            <span class="card-q-count">${ICON_MSG} ${c.clarifyingQuestions.length} вопросов</span>
-          </div>
+          ${c.clarifyingQuestions.length
+            ? `<div class="card-footer">
+                 <span class="card-q-count">${ICON_MSG} ${pluralQuestions(c.clarifyingQuestions.length)}</span>
+               </div>`
+            : ''}
         </button>`
     ).join('')
     : `<div class="empty-state">Ничего не найдено</div>`;
@@ -175,12 +277,17 @@ function openModal(id: string, pushUrl = true) {
     </li>`).join('');
 
   document.getElementById('modal-badges')!.innerHTML =
-    `${catBadge(c.category)} ${domBadge(c.domain)}`;
+    `${catBadges(c.categories)} ${domBadge(c.domain)}`;
   document.getElementById('modal-title')!.textContent = c.title;
   document.getElementById('modal-problem')!.textContent = c.problemStatement;
   document.getElementById('modal-questions')!.innerHTML = questions;
   document.getElementById('modal-q-label')!.textContent =
     `Уточняющие вопросы (${c.clarifyingQuestions.length})`;
+
+  // Кейсы без собранных вопросов показываем без пустой секции
+  const hasQuestions = c.clarifyingQuestions.length > 0;
+  document.getElementById('modal-questions-block')!.hidden = !hasQuestions;
+  document.getElementById('modal-divider')!.hidden = !hasQuestions;
 
   if (pushUrl) {
     const params = new URLSearchParams(location.search);
@@ -255,15 +362,13 @@ function init() {
             <p class="hero-subtitle">
               Коллекция mlsd-кейсов с реальных технических собеседований на позиции Data Scientist и ML Engineer
             </p>
-            <a
-              class="author-btn"
-              href="https://t.me/maxouniai"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              ${ICON_SEND}
-              <span>Автор сборника — maxouni.ai</span>
-            </a>
+            <div class="authors">
+              <span class="authors-title">Авторы сборника</span>
+              <div class="authors-list">
+                ${authorCard(LEAD_AUTHOR, true)}
+                ${COAUTHORS.map((a) => authorCard(a)).join('')}
+              </div>
+            </div>
           </div>
 
           <div class="search-wrap">
@@ -302,7 +407,7 @@ function init() {
             <a class="footer-link" href="https://t.me/maxouniai" target="_blank" rel="noopener">
               ${ICON_SEND}<span>Telegram-канал</span>
             </a>
-            <a class="footer-link" href="https://t.me/immaxouni" target="_blank" rel="noopener">
+            <a class="footer-link" href="https://t.me/dgiknooor" target="_blank" rel="noopener">
               ${ICON_SEND}<span>Написать</span>
             </a>
           </div>
@@ -328,8 +433,8 @@ function init() {
             </div>
             <p class="problem-text" id="modal-problem"></p>
           </div>
-          <div class="modal-divider"></div>
-          <div>
+          <div class="modal-divider" id="modal-divider"></div>
+          <div id="modal-questions-block">
             <div class="modal-section-head">
               ${ICON_LIST}
               <span id="modal-q-label">Уточняющие вопросы</span>

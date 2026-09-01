@@ -12,23 +12,38 @@
 
 ## Кейсы
 
-Сейчас в сборнике **17 кейсов** по 8 доменам.
+Сейчас в сборнике **45 кейсов** по 12 доменам.
 
-| Направление | Кол-во |
-|-------------|--------|
-| ClassicML   | 15     |
-| RecSys      | 2      |
+Кейс может нести несколько направлений сразу, поэтому сумма по направлениям больше числа кейсов.
 
-| Домен       | Кол-во |
-|-------------|--------|
-| Retail      | 6      |
-| Travel      | 3      |
-| AdTech      | 2      |
-| Media       | 2      |
-| FinTech     | 1      |
-| Telecom     | 1      |
-| RealEstate  | 1      |
-| Logistics   | 1      |
+| Направление  | Кол-во |
+|--------------|--------|
+| Classic ML   | 28     |
+| AI-engineer  | 9      |
+| LLM-engineer | 5      |
+| RecSys       | 4      |
+| CV           | 3      |
+
+| Домен      | Кол-во |
+|------------|--------|
+| Retail     | 16     |
+| FinTech    | 6      |
+| Enterprise | 4      |
+| Travel     | 3      |
+| AdTech     | 3      |
+| Media      | 3      |
+| Telecom    | 2      |
+| RealEstate | 2      |
+| Logistics  | 2      |
+| Legal      | 2      |
+| Social     | 1      |
+| Gambling   | 1      |
+
+## Авторы сборника
+
+- Максим Огородник — [Telegram](https://t.me/maxouniai)
+- Григорий Чернышов — [Telegram](https://t.me/doommot_channel)
+- Рома Филонов — [Telegram](https://t.me/Ai_bolno_ml), [YouTube](https://www.youtube.com/@AI_bolno_ml)
 
 ## Технологии
 
