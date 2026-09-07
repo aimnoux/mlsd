@@ -11,7 +11,8 @@ import {
 
 // ── Label maps ────────────────────────────────────────────
 
-const CATEGORY_LABEL: Record<string, string> = {
+// Record<Category, …> makes the compiler demand a label for every new value.
+const CATEGORY_LABEL: Record<Category, string> = {
   classic_ml: 'Classic ML',
   recsys: 'RecSys',
   cv: 'CV',
@@ -19,7 +20,7 @@ const CATEGORY_LABEL: Record<string, string> = {
   ai_engineer: 'AI-engineer',
 };
 
-const DOMAIN_LABEL: Record<string, string> = {
+const DOMAIN_LABEL: Record<Domain, string> = {
   retail: 'Retail',
   fintech: 'FinTech',
   adtech: 'AdTech',
@@ -34,14 +35,24 @@ const DOMAIN_LABEL: Record<string, string> = {
   social: 'Social',
 };
 
-const CATEGORIES: Array<Filter<Category>> = [
-  'all', 'classic_ml', 'recsys', 'cv', 'llm_engineer', 'ai_engineer',
-];
-const DOMAINS: Array<Filter<Domain>> = [
-  'all', 'retail', 'fintech', 'adtech', 'travel',
-  'telecom', 'realestate', 'media', 'logistics',
-  'gambling', 'legal', 'enterprise', 'social',
-];
+// Order of the pills follows the order of the label maps above.
+const CATEGORIES: Array<Filter<Category>> = ['all', ...(Object.keys(CATEGORY_LABEL) as Category[])];
+const DOMAINS: Array<Filter<Domain>> = ['all', ...(Object.keys(DOMAIN_LABEL) as Domain[])];
+
+// Counts never depend on the active filters, so they are computed once.
+function tally(values: string[]): Record<string, number> {
+  const acc: Record<string, number> = {};
+  values.forEach((v) => { acc[v] = (acc[v] ?? 0) + 1; });
+  return acc;
+}
+
+const CATEGORY_COUNTS = tally(cases.flatMap((c) => c.categories));
+const DOMAIN_COUNTS = tally(cases.map((c) => c.domain));
+
+// Lowercasing every case on every keystroke is pointless — do it once.
+const SEARCH_INDEX = new Map(
+  cases.map((c) => [c.id, `${c.title} ${c.problemStatement}`.toLowerCase()]),
+);
 
 // ── SVG icons ─────────────────────────────────────────────
 
@@ -126,10 +137,17 @@ const COAUTHORS: Author[] = [
 // ── Escape HTML ───────────────────────────────────────────
 
 function esc(s: string) {
-  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }
 
 // ── State ─────────────────────────────────────────────────
+
+type FilterGroup = 'category' | 'domain';
 
 interface AppState {
   category: Filter<Category>;
@@ -137,7 +155,7 @@ interface AppState {
   q: string;
 }
 
-let state: AppState = { category: 'all', domain: 'all', q: '' };
+const state: AppState = { category: 'all', domain: 'all', q: '' };
 let openCaseId: string | null = null;
 let lastResultCount = cases.length;
 
@@ -156,6 +174,8 @@ const SCROLL_END_SLACK = 24;
 
 let caseReadTimer: ReturnType<typeof setTimeout> | undefined;
 let caseReadSent = false;
+// The element to hand focus back to when the modal closes.
+let lastFocused: HTMLElement | null = null;
 
 // sessionStorage throws in some privacy modes — analytics must never break the page.
 function readSeenCases(): Set<string> {
@@ -194,10 +214,19 @@ function trackCaseRead(how: 'time' | 'scroll') {
 
 function isDark() { return document.documentElement.getAttribute('data-theme') === 'dark'; }
 
+// Keeps the browser UI (mobile address bar) in sync with the palette.
+function syncThemeColor() {
+  const meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
+  if (!meta) return;
+  const bg = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
+  if (bg) meta.content = bg;
+}
+
 function toggleTheme() {
   const next = isDark() ? 'light' : 'dark';
   document.documentElement.setAttribute('data-theme', next);
   localStorage.setItem('theme', next);
+  syncThemeColor();
   document.getElementById('theme-btn')!.innerHTML = next === 'dark'
     ? `${ICON_SUN} Светлая`
     : `${ICON_MOON} Тёмная`;
@@ -206,14 +235,21 @@ function toggleTheme() {
 
 // ── Badge helpers ─────────────────────────────────────────
 
-function catBadge(cat: string) {
-  return `<span class="badge badge-${cat}">${CATEGORY_LABEL[cat] ?? cat}</span>`;
+function catBadge(cat: Category) {
+  return `<span class="badge badge-${cat}">${CATEGORY_LABEL[cat]}</span>`;
 }
-function catBadges(cats: string[]) {
+function catBadges(cats: Category[]) {
   return cats.map(catBadge).join('');
 }
-function domBadge(dom: string) {
-  return `<span class="badge badge-${dom}">${DOMAIN_LABEL[dom] ?? dom}</span>`;
+function domBadge(dom: Domain) {
+  return `<span class="badge badge-${dom}">${DOMAIN_LABEL[dom]}</span>`;
+}
+
+function filterLabel(group: FilterGroup, value: string) {
+  if (value === 'all') return 'All';
+  return group === 'category'
+    ? CATEGORY_LABEL[value as Category]
+    : DOMAIN_LABEL[value as Domain];
 }
 
 // «1 вопрос», «2 вопроса», «5 вопросов»
@@ -249,52 +285,59 @@ function authorCard(a: Author, lead = false) {
 
 // ── Filter pill ───────────────────────────────────────────
 
-function filterPill(
-  label: string, value: string, count: number,
-  active: boolean, group: 'category' | 'domain',
-) {
-  return `<button class="filter-pill${active ? ' active' : ''}" data-group="${group}" data-value="${value}">
-    ${esc(label)}<span class="filter-count">${count}</span>
-  </button>`;
+function filterPill(group: FilterGroup, value: string, count: number, active: boolean) {
+  return `<button
+    class="filter-pill${active ? ' active' : ''}"
+    type="button"
+    data-group="${group}"
+    data-value="${value}"
+    aria-pressed="${active}"
+  >${esc(filterLabel(group, value))}<span class="filter-count">${count}</span></button>`;
+}
+
+// Labels and counts of the pills never change — only which one is active,
+// so they are built once and afterwards only get their state synced.
+function renderPills() {
+  document.getElementById('cat-pills')!.innerHTML = CATEGORIES
+    .filter((c) => c === 'all' || (CATEGORY_COUNTS[c] ?? 0) > 0)
+    .map((c) => filterPill(
+      'category', c,
+      c === 'all' ? cases.length : CATEGORY_COUNTS[c],
+      state.category === c,
+    )).join('');
+
+  document.getElementById('dom-pills')!.innerHTML = DOMAINS
+    .filter((d) => d === 'all' || (DOMAIN_COUNTS[d] ?? 0) > 0)
+    .map((d) => filterPill(
+      'domain', d,
+      d === 'all' ? cases.length : DOMAIN_COUNTS[d],
+      state.domain === d,
+    )).join('');
+}
+
+function syncPills() {
+  document.querySelectorAll<HTMLElement>('.filter-pill').forEach((pill) => {
+    const active = pill.dataset.group === 'category'
+      ? state.category === pill.dataset.value
+      : state.domain === pill.dataset.value;
+    pill.classList.toggle('active', active);
+    pill.setAttribute('aria-pressed', String(active));
+  });
+}
+
+function closestFrom<T extends Element>(target: EventTarget | null, selector: string): T | null {
+  return target instanceof Element ? target.closest<T>(selector) : null;
 }
 
 // ── Render list ───────────────────────────────────────────
 
 function renderList() {
-  const catCounts: Record<string, number> = {};
-  const domCounts: Record<string, number> = {};
-  cases.forEach((c) => {
-    c.categories.forEach((cat) => {
-      catCounts[cat] = (catCounts[cat] ?? 0) + 1;
-    });
-    domCounts[c.domain] = (domCounts[c.domain] ?? 0) + 1;
-  });
-
   const filtered = cases.filter((c) => {
     if (state.category !== 'all' && !c.categories.includes(state.category as Category)) return false;
     if (state.domain !== 'all' && c.domain !== state.domain) return false;
-    if (state.q) {
-      const q = state.q.toLowerCase();
-      return c.title.toLowerCase().includes(q) || c.problemStatement.toLowerCase().includes(q);
-    }
+    if (state.q) return (SEARCH_INDEX.get(c.id) ?? '').includes(state.q.toLowerCase());
     return true;
   });
-
-  const catPills = CATEGORIES
-    .filter((c) => c === 'all' || (catCounts[c] ?? 0) > 0)
-    .map((c) => filterPill(
-      c === 'all' ? 'All' : (CATEGORY_LABEL[c] ?? c),
-      c, c === 'all' ? cases.length : (catCounts[c] ?? 0),
-      state.category === c, 'category',
-    )).join('');
-
-  const domPills = DOMAINS
-    .filter((d) => d === 'all' || (domCounts[d] ?? 0) > 0)
-    .map((d) => filterPill(
-      d === 'all' ? 'All' : (DOMAIN_LABEL[d] ?? d),
-      d, d === 'all' ? cases.length : (domCounts[d] ?? 0),
-      state.domain === d, 'domain',
-    )).join('');
 
   const cards = filtered.length
     ? filtered.map((c, i) => `
@@ -328,12 +371,7 @@ function renderList() {
   document.getElementById('stats-bar')!.textContent =
     `Показано ${filtered.length} из ${cases.length}`;
 
-  // pills
-  document.getElementById('cat-pills')!.innerHTML = catPills;
-  document.getElementById('dom-pills')!.innerHTML = domPills;
-
-  bindCardEvents();
-  bindFilterEvents();
+  syncPills();
 }
 
 // ── Modal ─────────────────────────────────────────────────
@@ -383,14 +421,23 @@ function openModal(id: string, pushUrl = true, source: CaseOpenSource = 'card') 
   trackVisitParams({ case_open: { [c.title]: 1 } });
   trackEngagement(c.id);
 
+  // Everything behind the modal becomes inert: no tab stops, no screen
+  // reader content, so the dialog needs no focus trap of its own.
+  lastFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
   const overlay = document.getElementById('modal-overlay')!;
+  overlay.removeAttribute('inert');
+  document.querySelector('.page-wrap')!.setAttribute('inert', '');
   overlay.classList.add('open');
+  // Hiding the page scrollbar shifts the layout — compensate for its width.
+  const scrollbar = window.innerWidth - document.documentElement.clientWidth;
+  if (scrollbar > 0) document.body.style.paddingRight = `${scrollbar}px`;
   document.body.style.overflow = 'hidden';
 
   clearTimeout(caseReadTimer);
   caseReadSent = false;
   const modal = document.getElementById('modal')!;
   modal.scrollTop = 0;
+  modal.focus({ preventScroll: true });
   const fitsOnScreen = modal.scrollHeight <= modal.clientHeight + SCROLL_END_SLACK;
   caseReadTimer = setTimeout(
     () => trackCaseRead('time'),
@@ -410,40 +457,44 @@ function closeModal(pushUrl = true) {
   }
   const overlay = document.getElementById('modal-overlay')!;
   overlay.classList.remove('open');
+  overlay.setAttribute('inert', '');
+  document.querySelector('.page-wrap')!.removeAttribute('inert');
   document.body.style.overflow = '';
+  document.body.style.paddingRight = '';
+
+  if (lastFocused?.isConnected) lastFocused.focus({ preventScroll: true });
+  lastFocused = null;
 }
 
 // ── Bind events ───────────────────────────────────────────
 
-function bindCardEvents() {
-  document.querySelectorAll<HTMLElement>('.case-card').forEach((card) => {
-    card.addEventListener('click', () => {
-      const id = card.dataset.caseId;
-      if (id) openModal(id);
-    });
+// Delegated once on the containers: re-rendering the list or the pills does
+// not need to rebind anything.
+function bindListEvents() {
+  document.getElementById('case-list')!.addEventListener('click', (e) => {
+    const id = closestFrom<HTMLElement>(e.target, '.case-card')?.dataset.caseId;
+    if (id) openModal(id);
   });
-}
 
-function bindFilterEvents() {
-  document.querySelectorAll<HTMLElement>('.filter-pill').forEach((pill) => {
-    pill.addEventListener('click', () => {
-      const group = pill.dataset.group as 'category' | 'domain';
-      const value = pill.dataset.value ?? 'all';
-      if (group === 'category') state.category = value as Filter<Category>;
-      else state.domain = value as Filter<Domain>;
-      renderList();
-      trackGoal(group === 'category' ? 'filter_category' : 'filter_domain', {
-        value,
-        label: (group === 'category' ? CATEGORY_LABEL[value] : DOMAIN_LABEL[value]) ?? value,
-      });
+  document.querySelector('.filters')!.addEventListener('click', (e) => {
+    const pill = closestFrom<HTMLElement>(e.target, '.filter-pill');
+    const group = pill?.dataset.group;
+    if (!pill || (group !== 'category' && group !== 'domain')) return;
+
+    const value = pill.dataset.value ?? 'all';
+    if (group === 'category') state.category = value as Filter<Category>;
+    else state.domain = value as Filter<Domain>;
+    renderList();
+    trackGoal(group === 'category' ? 'filter_category' : 'filter_domain', {
+      value,
+      label: filterLabel(group, value),
     });
   });
 }
 
 function bindOutboundEvents() {
   document.addEventListener('click', (e) => {
-    const target = e.target as HTMLElement | null;
-    const link = target?.closest?.('a[href]') as HTMLAnchorElement | null;
+    const link = closestFrom<HTMLAnchorElement>(e.target, 'a[href]');
     if (!link) return;
 
     let host: string;
@@ -561,8 +612,15 @@ function init() {
     </div>
 
     <!-- Modal -->
-    <div id="modal-overlay" class="modal-overlay" role="dialog" aria-modal="true">
-      <div class="modal" id="modal">
+    <div id="modal-overlay" class="modal-overlay" inert>
+      <div
+        class="modal"
+        id="modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="modal-title"
+        tabindex="-1"
+      >
         <div class="modal-header">
           <div class="modal-header-top">
             <div class="modal-badges" id="modal-badges"></div>
@@ -650,6 +708,9 @@ function init() {
     }
   });
 
+  syncThemeColor();
+  renderPills();
+  bindListEvents();
   bindOutboundEvents();
 
   renderList();
