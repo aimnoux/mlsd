@@ -103,6 +103,17 @@ const COAUTHORS: Author[] = [
       },
     ],
   },
+  {
+    name: 'Сергей Пошляков',
+    links: [
+      {
+        kind: 'telegram',
+        label: 'Telegram',
+        handle: '@loft_ds',
+        href: 'https://t.me/loft_ds',
+      },
+    ],
+  },
 ];
 
 // ── Escape HTML ───────────────────────────────────────────
