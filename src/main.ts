@@ -1,6 +1,13 @@
 import './style.css';
 import { cases } from './data/cases';
 import type { Category, Domain, Filter } from './types';
+import {
+  initAnalytics,
+  trackExternalLink,
+  trackGoal,
+  trackPageView,
+  trackVisitParams,
+} from './analytics';
 
 // ── Label maps ────────────────────────────────────────────
 
@@ -144,6 +151,7 @@ function toggleTheme() {
   document.getElementById('theme-btn')!.innerHTML = next === 'dark'
     ? `${ICON_SUN} Светлая`
     : `${ICON_MOON} Тёмная`;
+  trackGoal('theme_toggle', { theme: next });
 }
 
 // ── Badge helpers ─────────────────────────────────────────
@@ -176,6 +184,8 @@ function authorCard(a: Author, lead = false) {
       href="${l.href}"
       target="_blank"
       rel="noopener noreferrer"
+      data-track="author"
+      data-track-label="${esc(`${a.name} — ${l.label}`)}"
     >${LINK_ICON[l.kind]}<span class="author-btn-label">${esc(l.label)}</span><span
       class="author-btn-handle"
     >${esc(l.handle)}</span></a>`).join('');
@@ -305,7 +315,17 @@ function openModal(id: string, pushUrl = true) {
     params.set('id', id);
     history.pushState({ id }, '', `${location.pathname}?${params}`);
     document.title = `${c.title} — MLSD Cases`;
+    // On the initial load Metrika has already counted this URL by itself.
+    trackPageView(`${location.pathname}?${params}`, c.title);
   }
+
+  trackGoal('case_open', {
+    case_id: c.id,
+    case_title: c.title,
+    domain: c.domain,
+    categories: c.categories.join(','),
+  });
+  trackVisitParams({ case_open: { [c.title]: 1 } });
 
   const overlay = document.getElementById('modal-overlay')!;
   overlay.classList.add('open');
@@ -345,13 +365,45 @@ function bindFilterEvents() {
       if (group === 'category') state.category = value as Filter<Category>;
       else state.domain = value as Filter<Domain>;
       renderList();
+      trackGoal(group === 'category' ? 'filter_category' : 'filter_domain', {
+        value,
+        label: (group === 'category' ? CATEGORY_LABEL[value] : DOMAIN_LABEL[value]) ?? value,
+      });
     });
+  });
+}
+
+function bindOutboundEvents() {
+  document.addEventListener('click', (e) => {
+    const target = e.target as HTMLElement | null;
+    const link = target?.closest?.('a[href]') as HTMLAnchorElement | null;
+    if (!link) return;
+
+    let host: string;
+    try {
+      const url = new URL(link.href, location.href);
+      if (url.protocol !== 'http:' && url.protocol !== 'https:') return;
+      host = url.host;
+    } catch {
+      return;
+    }
+    if (host === location.host) return;
+
+    const place = link.dataset.track ?? 'other';
+    const label = link.dataset.trackLabel ?? link.textContent?.trim() ?? link.href;
+
+    trackExternalLink(link.href, label);
+    trackGoal('outbound_click', { place, label, url: link.href });
+    if (place === 'author') trackGoal('author_link', { label, url: link.href });
+    if (place === 'footer') trackGoal('footer_link', { label, url: link.href });
   });
 }
 
 // ── Bootstrap ─────────────────────────────────────────────
 
 function init() {
+  initAnalytics();
+
   const app = document.getElementById('app')!;
   app.innerHTML = `
     <div class="page-wrap">
@@ -415,10 +467,24 @@ function init() {
         <div class="container">
           <p class="footer-desc">Сборник кейсов по ML System Design с реальных собеседований</p>
           <div class="footer-contacts">
-            <a class="footer-link" href="https://t.me/maxouniai" target="_blank" rel="noopener">
+            <a
+              class="footer-link"
+              href="https://t.me/maxouniai"
+              target="_blank"
+              rel="noopener"
+              data-track="footer"
+              data-track-label="Футер — Telegram-канал"
+            >
               ${ICON_SEND}<span>Telegram-канал</span>
             </a>
-            <a class="footer-link" href="https://t.me/dgiknooor" target="_blank" rel="noopener">
+            <a
+              class="footer-link"
+              href="https://t.me/dgiknooor"
+              target="_blank"
+              rel="noopener"
+              data-track="footer"
+              data-track-label="Футер — Написать"
+            >
               ${ICON_SEND}<span>Написать</span>
             </a>
           </div>
@@ -463,12 +529,22 @@ function init() {
   // Search
   const searchInput = document.getElementById('search-input') as HTMLInputElement;
   let debounce: ReturnType<typeof setTimeout>;
+  let searchTrackDebounce: ReturnType<typeof setTimeout>;
   searchInput.addEventListener('input', () => {
     clearTimeout(debounce);
     debounce = setTimeout(() => {
       state.q = searchInput.value;
       renderList();
     }, 180);
+
+    // Longer delay so a query is reported once, not on every keystroke.
+    clearTimeout(searchTrackDebounce);
+    searchTrackDebounce = setTimeout(() => {
+      const q = searchInput.value.trim().toLowerCase();
+      if (q.length < 3) return;
+      trackGoal('search', { query: q });
+      trackVisitParams({ search_query: { [q]: 1 } });
+    }, 1200);
   });
 
   // Modal close
@@ -489,6 +565,8 @@ function init() {
       closeModal(false);
     }
   });
+
+  bindOutboundEvents();
 
   renderList();
 
