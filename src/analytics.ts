@@ -1,8 +1,8 @@
 // Yandex.Metrika integration.
 //
-// Put the counter number from https://metrika.yandex.ru here. While it is 0
-// analytics stays completely off: no script is loaded and no calls are made.
-const COUNTER_ID: number = 0;
+// Counter number from https://metrika.yandex.ru. Setting it to 0 turns
+// analytics completely off: no script is loaded and no calls are made.
+const COUNTER_ID: number = 112359673;
 
 type YmFn = {
   (counterId: number, method: string, ...args: unknown[]): void;
