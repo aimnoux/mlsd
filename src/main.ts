@@ -1,6 +1,13 @@
 import './style.css';
 import { cases } from './data/cases';
 import type { Category, Domain, Filter } from './types';
+import {
+  initAnalytics,
+  trackExternalLink,
+  trackGoal,
+  trackPageView,
+  trackVisitParams,
+} from './analytics';
 
 // ── Label maps ────────────────────────────────────────────
 
@@ -103,6 +110,17 @@ const COAUTHORS: Author[] = [
       },
     ],
   },
+  {
+    name: 'Сергей Пошляков',
+    links: [
+      {
+        kind: 'telegram',
+        label: 'Telegram',
+        handle: '@loft_ds',
+        href: 'https://t.me/loft_ds',
+      },
+    ],
+  },
 ];
 
 // ── Escape HTML ───────────────────────────────────────────
@@ -121,6 +139,56 @@ interface AppState {
 
 let state: AppState = { category: 'all', domain: 'all', q: '' };
 let openCaseId: string | null = null;
+let lastResultCount = cases.length;
+
+// ── Analytics helpers ─────────────────────────────────────
+
+// A case counts as read once it is scrolled to the bottom, or after this long
+// in the modal — whichever happens first. Cases short enough to fit on screen
+// have nothing to scroll, so they get the shorter timeout.
+const CASE_READ_MS = 30_000;
+const CASE_READ_SHORT_MS = 15_000;
+// Opening this many different cases in one visit marks an engaged visit.
+const ENGAGED_VISIT_CASES = 3;
+const SEEN_CASES_KEY = 'mlsd_seen_cases';
+// Momentum scrolling rarely lands exactly on the last pixel.
+const SCROLL_END_SLACK = 24;
+
+let caseReadTimer: ReturnType<typeof setTimeout> | undefined;
+let caseReadSent = false;
+
+// sessionStorage throws in some privacy modes — analytics must never break the page.
+function readSeenCases(): Set<string> {
+  try {
+    return new Set((sessionStorage.getItem(SEEN_CASES_KEY) ?? '').split(',').filter(Boolean));
+  } catch {
+    return new Set();
+  }
+}
+
+function writeSeenCases(ids: Set<string>) {
+  try {
+    sessionStorage.setItem(SEEN_CASES_KEY, [...ids].join(','));
+  } catch {
+    // ignore
+  }
+}
+
+function trackEngagement(caseId: string) {
+  const seen = readSeenCases();
+  if (seen.has(caseId)) return;
+  seen.add(caseId);
+  writeSeenCases(seen);
+  // Strict equality keeps the goal at one hit per visit.
+  if (seen.size === ENGAGED_VISIT_CASES) trackGoal('engaged_visit', { cases: seen.size });
+}
+
+function trackCaseRead(how: 'time' | 'scroll') {
+  if (caseReadSent || !openCaseId) return;
+  caseReadSent = true;
+  const c = cases.find((x) => x.id === openCaseId);
+  trackGoal('case_read', { case_id: openCaseId, case_title: c?.title ?? '', how });
+}
 
 // ── Theme ─────────────────────────────────────────────────
 
@@ -133,6 +201,7 @@ function toggleTheme() {
   document.getElementById('theme-btn')!.innerHTML = next === 'dark'
     ? `${ICON_SUN} Светлая`
     : `${ICON_MOON} Тёмная`;
+  trackGoal('theme_toggle', { theme: next });
 }
 
 // ── Badge helpers ─────────────────────────────────────────
@@ -165,6 +234,8 @@ function authorCard(a: Author, lead = false) {
       href="${l.href}"
       target="_blank"
       rel="noopener noreferrer"
+      data-track="author"
+      data-track-label="${esc(`${a.name} — ${l.label}`)}"
     >${LINK_ICON[l.kind]}<span class="author-btn-label">${esc(l.label)}</span><span
       class="author-btn-handle"
     >${esc(l.handle)}</span></a>`).join('');
@@ -249,6 +320,8 @@ function renderList() {
     ).join('')
     : `<div class="empty-state">Ничего не найдено</div>`;
 
+  lastResultCount = filtered.length;
+
   const listEl = document.getElementById('case-list')!;
   listEl.innerHTML = cards;
 
@@ -265,7 +338,9 @@ function renderList() {
 
 // ── Modal ─────────────────────────────────────────────────
 
-function openModal(id: string, pushUrl = true) {
+type CaseOpenSource = 'card' | 'direct' | 'history';
+
+function openModal(id: string, pushUrl = true, source: CaseOpenSource = 'card') {
   const c = cases.find((x) => x.id === id);
   if (!c) return;
   openCaseId = id;
@@ -294,14 +369,37 @@ function openModal(id: string, pushUrl = true) {
     params.set('id', id);
     history.pushState({ id }, '', `${location.pathname}?${params}`);
     document.title = `${c.title} — MLSD Cases`;
+    // On the initial load Metrika has already counted this URL by itself.
+    trackPageView(`${location.pathname}?${params}`, c.title);
   }
+
+  trackGoal('case_open', {
+    case_id: c.id,
+    case_title: c.title,
+    domain: c.domain,
+    categories: c.categories.join(','),
+    source,
+  });
+  trackVisitParams({ case_open: { [c.title]: 1 } });
+  trackEngagement(c.id);
 
   const overlay = document.getElementById('modal-overlay')!;
   overlay.classList.add('open');
   document.body.style.overflow = 'hidden';
+
+  clearTimeout(caseReadTimer);
+  caseReadSent = false;
+  const modal = document.getElementById('modal')!;
+  modal.scrollTop = 0;
+  const fitsOnScreen = modal.scrollHeight <= modal.clientHeight + SCROLL_END_SLACK;
+  caseReadTimer = setTimeout(
+    () => trackCaseRead('time'),
+    fitsOnScreen ? CASE_READ_SHORT_MS : CASE_READ_MS,
+  );
 }
 
 function closeModal(pushUrl = true) {
+  clearTimeout(caseReadTimer);
   openCaseId = null;
   if (pushUrl) {
     const params = new URLSearchParams(location.search);
@@ -334,13 +432,46 @@ function bindFilterEvents() {
       if (group === 'category') state.category = value as Filter<Category>;
       else state.domain = value as Filter<Domain>;
       renderList();
+      trackGoal(group === 'category' ? 'filter_category' : 'filter_domain', {
+        value,
+        label: (group === 'category' ? CATEGORY_LABEL[value] : DOMAIN_LABEL[value]) ?? value,
+      });
     });
+  });
+}
+
+function bindOutboundEvents() {
+  document.addEventListener('click', (e) => {
+    const target = e.target as HTMLElement | null;
+    const link = target?.closest?.('a[href]') as HTMLAnchorElement | null;
+    if (!link) return;
+
+    let host: string;
+    try {
+      const url = new URL(link.href, location.href);
+      if (url.protocol !== 'http:' && url.protocol !== 'https:') return;
+      host = url.host;
+    } catch {
+      return;
+    }
+    if (host === location.host) return;
+
+    const place = link.dataset.track ?? 'other';
+    const label = link.dataset.trackLabel ?? link.textContent?.trim() ?? link.href;
+
+    trackExternalLink(link.href, label);
+    trackGoal('outbound_click', { place, label, url: link.href });
+    trackVisitParams({ outbound: { [place]: { [label]: 1 } } });
+    if (place === 'author') trackGoal('author_link', { label, url: link.href });
+    if (place === 'footer') trackGoal('footer_link', { label, url: link.href });
   });
 }
 
 // ── Bootstrap ─────────────────────────────────────────────
 
 function init() {
+  initAnalytics();
+
   const app = document.getElementById('app')!;
   app.innerHTML = `
     <div class="page-wrap">
@@ -404,10 +535,24 @@ function init() {
         <div class="container">
           <p class="footer-desc">Сборник кейсов по ML System Design с реальных собеседований</p>
           <div class="footer-contacts">
-            <a class="footer-link" href="https://t.me/maxouniai" target="_blank" rel="noopener">
+            <a
+              class="footer-link"
+              href="https://t.me/maxouniai"
+              target="_blank"
+              rel="noopener"
+              data-track="footer"
+              data-track-label="Футер — Telegram-канал"
+            >
               ${ICON_SEND}<span>Telegram-канал</span>
             </a>
-            <a class="footer-link" href="https://t.me/dgiknooor" target="_blank" rel="noopener">
+            <a
+              class="footer-link"
+              href="https://t.me/dgiknooor"
+              target="_blank"
+              rel="noopener"
+              data-track="footer"
+              data-track-label="Футер — Написать"
+            >
               ${ICON_SEND}<span>Написать</span>
             </a>
           </div>
@@ -452,12 +597,38 @@ function init() {
   // Search
   const searchInput = document.getElementById('search-input') as HTMLInputElement;
   let debounce: ReturnType<typeof setTimeout>;
+  let searchTrackDebounce: ReturnType<typeof setTimeout>;
   searchInput.addEventListener('input', () => {
     clearTimeout(debounce);
     debounce = setTimeout(() => {
       state.q = searchInput.value;
       renderList();
     }, 180);
+
+    // Longer delay so a query is reported once, not on every keystroke.
+    clearTimeout(searchTrackDebounce);
+    searchTrackDebounce = setTimeout(() => {
+      const q = searchInput.value.trim().toLowerCase();
+      if (q.length < 3) return;
+      trackGoal('search', { query: q, results: lastResultCount });
+      trackVisitParams({ search_query: { [q]: 1 } });
+      // Queries with no hits are the shortlist of cases worth adding.
+      if (lastResultCount === 0) {
+        trackGoal('search_empty', { query: q });
+        trackVisitParams({ search_empty: { [q]: 1 } });
+      }
+    }, 1200);
+  });
+
+  // Reading a case to the end
+  const modal = document.getElementById('modal')!;
+  modal.addEventListener('scroll', () => {
+    // A modal with nothing to scroll is always "at the bottom" — such cases
+    // are only ever counted as read by the timer.
+    if (modal.scrollHeight <= modal.clientHeight + SCROLL_END_SLACK) return;
+    if (modal.scrollTop + modal.clientHeight >= modal.scrollHeight - SCROLL_END_SLACK) {
+      trackCaseRead('scroll');
+    }
   });
 
   // Modal close
@@ -473,17 +644,19 @@ function init() {
   window.addEventListener('popstate', () => {
     const id = new URLSearchParams(location.search).get('id');
     if (id) {
-      openModal(id, false);
+      openModal(id, false, 'history');
     } else {
       closeModal(false);
     }
   });
 
+  bindOutboundEvents();
+
   renderList();
 
   // Auto-open if ?id= is in the URL on initial load
   const initialId = new URLSearchParams(location.search).get('id');
-  if (initialId) openModal(initialId, false);
+  if (initialId) openModal(initialId, false, 'direct');
 }
 
 init();
