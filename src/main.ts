@@ -87,7 +87,7 @@ const LEAD_AUTHOR: Author = {
       kind: 'telegram',
       label: 'Telegram',
       handle: '@maxouniai',
-      href: 'https://t.me/maxouniai',
+      href: 'https://t.me/+V53c-4HrrXM2OGMy',
     },
   ],
 };
@@ -588,7 +588,7 @@ function init() {
           <div class="footer-contacts">
             <a
               class="footer-link"
-              href="https://t.me/maxouniai"
+              href="https://t.me/+V53c-4HrrXM2OGMy"
               target="_blank"
               rel="noopener"
               data-track="footer"

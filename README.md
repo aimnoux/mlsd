@@ -2,7 +2,7 @@
 
 Сборник кейсов по ML System Design с реальных собеседований на позиции Data Scientist и ML Engineer.
 
-Связан с Telegram-каналом [maxouni.ai | by maxim ogorodnik](https://t.me/maxouniai).
+Связан с Telegram-каналом [maxouni.ai | by maxim ogorodnik](https://t.me/+V53c-4HrrXM2OGMy).
 
 **Сайт:** https://aimnoux.github.io/mlsd/
 
@@ -41,7 +41,7 @@
 
 ## Авторы сборника
 
-- Максим Огородник — [Telegram](https://t.me/maxouniai)
+- Максим Огородник — [Telegram](https://t.me/+V53c-4HrrXM2OGMy)
 - Григорий Чернышов — [Telegram](https://t.me/doommot_channel)
 - Рома Филонов — [Telegram](https://t.me/Ai_bolno_ml), [YouTube](https://www.youtube.com/@AI_bolno_ml)
 - Сергей Пошляков — [Telegram](https://t.me/loft_ds)
