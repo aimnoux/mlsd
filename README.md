@@ -12,16 +12,16 @@
 
 ## Кейсы
 
-Сейчас в сборнике **45 кейсов** по 12 доменам.
+Сейчас в сборнике **46 кейсов** по 12 доменам.
 
 Кейс может нести несколько направлений сразу, поэтому сумма по направлениям больше числа кейсов.
 
 | Направление  | Кол-во |
 |--------------|--------|
-| Classic ML   | 28     |
+| Classic ML   | 29     |
 | AI-engineer  | 9      |
 | LLM-engineer | 5      |
-| RecSys       | 4      |
+| RecSys       | 5      |
 | CV           | 3      |
 
 | Домен      | Кол-во |
@@ -29,9 +29,9 @@
 | Retail     | 16     |
 | FinTech    | 6      |
 | Enterprise | 4      |
+| Media      | 4      |
 | Travel     | 3      |
 | AdTech     | 3      |
-| Media      | 3      |
 | Telecom    | 2      |
 | RealEstate | 2      |
 | Logistics  | 2      |
@@ -45,6 +45,7 @@
 - Григорий Чернышов — [Telegram](https://t.me/doommot_channel)
 - Рома Филонов — [Telegram](https://t.me/Ai_bolno_ml), [YouTube](https://www.youtube.com/@AI_bolno_ml)
 - Сергей Пошляков — [Telegram](https://t.me/loft_ds)
+- Daniel Zyabkin — [Telegram](https://t.me/danielzyabkin)
 
 ## Технологии
 

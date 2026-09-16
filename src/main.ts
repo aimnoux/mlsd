@@ -132,6 +132,17 @@ const COAUTHORS: Author[] = [
       },
     ],
   },
+  {
+    name: 'Daniel Zyabkin',
+    links: [
+      {
+        kind: 'telegram',
+        label: 'Telegram',
+        handle: '@danielzyabkin',
+        href: 'https://t.me/danielzyabkin',
+      },
+    ],
+  },
 ];
 
 // ── Escape HTML ───────────────────────────────────────────
