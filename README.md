@@ -45,7 +45,7 @@
 - Григорий Чернышов — [Telegram](https://t.me/doommot_channel)
 - Рома Филонов — [Telegram](https://t.me/Ai_bolno_ml), [YouTube](https://www.youtube.com/@AI_bolno_ml)
 - Сергей Пошляков — [Telegram](https://t.me/loft_ds)
-- Daniel Zyabkin — [Telegram](https://t.me/danielzyabkin)
+- Даниэль Зябкин — [Telegram](https://t.me/danielzyabkin)
 
 ## Технологии
 

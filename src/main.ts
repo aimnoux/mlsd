@@ -133,7 +133,7 @@ const COAUTHORS: Author[] = [
     ],
   },
   {
-    name: 'Daniel Zyabkin',
+    name: 'Даниэль Зябкин',
     links: [
       {
         kind: 'telegram',
